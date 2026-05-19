@@ -1,0 +1,83 @@
+# @function_tool
+    # async def get_live_info(
+    #     self,
+    #     context: RunContext,
+    #     category: str,   # weather | stock | gold
+    #     query: str       # city name / stock symbol / metal name
+    # ) -> str:
+    #     """
+    #     Get live information:
+    #     - weather → city name (e.g. Pune)
+    #     - stock → symbol (e.g. AAPL, TCS.NS)
+    #     - gold → city/country (e.g. India)
+    #     """
+
+    #     category = category.lower()
+
+    #     try:
+    #         async with aiohttp.ClientSession() as session:
+
+    #             # 🌦 WEATHER
+    #             if category == "weather":
+    #                 # Step 1: get coordinates
+    #                 geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={query}&count=1"
+    #                 async with session.get(geo_url) as res:
+    #                     geo = await res.json()
+
+    #                 if "results" not in geo:
+    #                     return f"Could not find location {query}"
+
+    #                 lat = geo["results"][0]["latitude"]
+    #                 lon = geo["results"][0]["longitude"]
+
+    #                 # Step 2: get weather
+    #                 weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+
+    #                 async with session.get(weather_url) as res:
+    #                     data = await res.json()
+
+    #                 current = data.get("current_weather", {})
+    #                 temp = current.get("temperature")
+    #                 wind = current.get("windspeed")
+
+    #                 return f"Weather in {query}: {temp}°C, wind {wind} km/h"
+
+
+    #             # 📈 STOCK MARKET
+    #             elif category == "stock":
+    #                 # Using Yahoo Finance unofficial API
+    #                 url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={query}"
+
+    #                 async with session.get(url) as res:
+    #                     data = await res.json()
+
+    #                 result = data["quoteResponse"]["result"]
+    #                 if not result:
+    #                     return f"Stock {query} not found"
+
+    #                 stock = result[0]
+    #                 price = stock.get("regularMarketPrice")
+    #                 change = stock.get("regularMarketChangePercent")
+
+    #                 return f"{query} is at {price} ({change:.2f}% change)"
+
+
+    #             # 🟡 GOLD RATE (approx via metals API proxy)
+    #             elif category == "gold":
+    #                 # Free workaround (not perfect real-time but usable)
+    #                 url = "https://api.metals.live/v1/spot/gold"
+
+    #                 async with session.get(url) as res:
+    #                     data = await res.json()
+
+    #                 price = data[0]["price"]
+
+    #                 return f"Gold price (global): {price} USD per ounce"
+
+
+    #             else:
+    #                 return "Invalid category. Use weather, stock, or gold."
+
+    #     except Exception as e:
+    #         logger.error(e)
+    #         return "Service temporarily unavailable."

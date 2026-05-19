@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voice Agent</title>
+  <script src="https://esm.sh/livekit-client"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      background: rgba(30, 41, 59, 0.95);
+      padding: 40px 30px;
+      border-radius: 24px;
+      width: 380px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .header {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 30px;
+      background: linear-gradient(90deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .orb-container {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      margin: 0 auto 30px;
+    }
+
+    .orb {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 30%, #3b82f6, #1e40af);
+      box-shadow: 
+        0 0 80px #60a5fa,
+        0 0 140px rgba(96, 165, 250, 0.6),
+        inset 0 0 60px rgba(255,255,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s ease;
+      animation: pulse 4s infinite ease-in-out;
+    }
+
+    .orb-listening {
+      animation: pulse-listening 1.2s infinite ease-in-out;
+      box-shadow: 
+        0 0 100px #22c55e,
+        0 0 180px rgba(34, 197, 94, 0.8),
+        inset 0 0 60px rgba(255,255,255,0.4);
+      background: radial-gradient(circle at 40% 30%, #4ade80, #15803d);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes pulse-listening {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.12); }
+    }
+
+    .status-text {
+      font-size: 1.1rem;
+      margin: 20px 0 30px;
+      min-height: 28px;
+      color: #94a3b8;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+
+    button {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #startBtn {
+      background: #22c55e;
+      color: white;
+      flex: 1;
+    }
+
+    #startBtn:hover {
+      background: #16a34a;
+      transform: translateY(-2px);
+    }
+
+    #endBtn {
+      background: #ef4444;
+      color: white;
+      flex: 1;
+    }
+
+    #endBtn:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+    }
+
+    .info {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 20px;
+    }
+
+    .mic-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: micPulse 1.5s infinite;
+    }
+
+    @keyframes micPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">Voice Agent</div>
+
+    <div class="orb-container">
+      <div id="orb" class="orb">
+        <!-- You can add a subtle icon or leave it clean -->
+      </div>
+    </div>
+
+    <div id="statusText" class="status-text">
+      I'm listening, Armando...<br>
+      What's on your mind?
+    </div>
+
+    <div class="controls">
+      <button id="startBtn">🎙 Start Listening</button>
+      <button id="endBtn" disabled>End Session</button>
+    </div>
+
+    <div class="info">
+      <span id="micStatus">Mic: OFF</span> • 
+      <span id="botStatus">Agent: Idle</span>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Room, RoomEvent } from "https://esm.sh/livekit-client";
+
+    let room = null;
+    let isListening = false;
+
+    const orb = document.getElementById("orb");
+    const statusText = document.getElementById("statusText");
+    const startBtn = document.getElementById("startBtn");
+    const endBtn = document.getElementById("endBtn");
+    const micStatus = document.getElementById("micStatus");
+    const botStatus = document.getElementById("botStatus");
+
+    function setListeningMode(active) {
+      isListening = active;
+      if (active) {
+        orb.classList.add("orb-listening");
+        statusText.innerHTML = `I'm listening...<br><strong>Speak now</strong>`;
+        micStatus.innerHTML = `Mic: ON <span class="mic-dot"></span>`;
+      } else {
+        orb.classList.remove("orb-listening");
+        statusText.innerHTML = `I'm listening, Armando...<br>What's on your mind?`;
+        micStatus.textContent = "Mic: OFF";
+      }
+    }
+
+    startBtn.addEventListener("click", async () => {
+      try {
+        statusText.textContent = "Connecting to voice agent...";
+        startBtn.disabled = true;
+
+        room = new Room();
+
+        room
+          .on(RoomEvent.Connected, () => {
+            statusText.textContent = "Connected • Ready";
+            startBtn.disabled = true;
+            endBtn.disabled = false;
+          })
+
+          .on(RoomEvent.Disconnected, () => {
+            resetUI();
+          })
+
+          .on(RoomEvent.TrackSubscribed, (track) => {
+            if (track.kind === "audio") {
+              track.attach(); // Play agent's voice
+              botStatus.textContent = "Agent: Speaking...";
+              setTimeout(() => {
+                if (room) botStatus.textContent = "Agent: Listening";
+              }, 3000);
+            }
+          });
+
+        // Fetch token from your backend
+        const res = await fetch("http://172.16.15.76:8080/token");
+        if (!res.ok) throw new Error("Failed to get token");
+        const data = await res.json();
+
+        await room.connect("ws://172.16.15.76:7880", data.token);
+
+        // Enable microphone
+        await room.localParticipant.setMicrophoneEnabled(true);
+        setListeningMode(true);
+
+      } catch (err) {
+        console.error("Full error:", err);
+        console.error("Error message:", err.message);
+        console.error("Error stack:", err.stack);
+        alert(`Connection failed: ${err.message}`);
+        resetUI();
+      }
+    });
+
+    endBtn.addEventListener("click", async () => {
+      if (room) {
+        await room.disconnect();
+        room = null;
+      }
+      resetUI();
+    });
+
+    function resetUI() {
+      setListeningMode(false);
+      botStatus.textContent = "Agent: Idle";
+      startBtn.disabled = false;
+      endBtn.disabled = true;
+    }
+
+    // Optional: Keyboard shortcut (Spacebar to toggle)
+    document.addEventListener("keydown", (e) => {
+      if (e.key === " " && !startBtn.disabled) {
+        e.preventDefault();
+        startBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>

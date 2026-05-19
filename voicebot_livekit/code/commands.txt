@@ -1,0 +1,2 @@
+livekit command:
+docker run --rm -p 7880:7880 -p 7881:7881 -p 50000-50050:50000-50050/udp -v "${PWD}/livekit.yaml:/livekit.yaml" -e LIVEKIT_KEYS="APIAkcMEPhznrVB: aLC0HKM32y6hmyCA4qsqelZISXa0p9nR7CX1AyYvwmP" -e LIVEKIT_DEV=true livekit/livekit-server --config /livekit.yaml

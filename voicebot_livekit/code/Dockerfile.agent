@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ libffi-dev libssl-dev portaudio19-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY agents/requirements.txt .
+RUN pip install --no-cache-dir \
+    livekit livekit-agents livekit-plugins-openai livekit-plugins-silero \
+    livekit-plugins-turn-detector aiohttp python-dotenv
+
+COPY agents/ ./agents/
+COPY .env .
+
+CMD ["python", "agents/voiceagent.py", "start"]

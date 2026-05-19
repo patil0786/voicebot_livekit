@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Voice Bot</title>
+</head>
+<body>
+  <h2>Voice Bot</h2>
+  <button id="startBtn">Start Talking</button>
+
+  <script type="module">
+  import { Room, RoomEvent, ConnectionState } from "https://esm.sh/livekit-client";
+
+  const startBtn = document.getElementById("startBtn");
+
+  startBtn.addEventListener("click", async () => {
+    console.log("🟢 Initializing LiveKit...");
+
+    try {
+      const res = await fetch("http://localhost:8000/token");
+      const data = await res.json();
+      console.log("Token received");
+
+      const room = new Room();
+
+      // --- LOGGING & AUDIO SETUP ---
+      room
+        .on(RoomEvent.Connected, () => console.log("✅ Room Connected! Signal is UP."))
+        .on(RoomEvent.ConnectionStateChanged, (state) => {
+           console.log(`📡 Connection State: ${state}`);
+        })
+        // THIS PART IS IMPORTANT: It plays the Bot's voice when it speaks
+        .on(RoomEvent.TrackSubscribed, (track) => {
+          if (track.kind === 'audio') {
+            track.attach();
+            console.log("🔊 Bot audio track attached and playing");
+          }
+        });
+
+      // Connect to LiveKit
+      await room.connect("ws://localhost:7880", data.token);
+
+      console.log("🎤 Attempting to enable microphone...");
+      
+      // FIX: Use the actual value 'true'
+      await room.localParticipant.setMicrophoneEnabled(true);
+      
+      console.log("✨ Mic is live! You can start talking now.");
+
+    } catch (err) {
+      console.error("❌ Critical Error:", err);
+      if (err.name === 'NotAllowedError') {
+        alert("Microphone access denied! Please allow mic permissions in your browser.");
+      }
+    }
+  });
+</script>
+</body>
+</html>
