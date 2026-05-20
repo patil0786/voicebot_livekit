@@ -238,11 +238,11 @@
           });
 
         // Fetch token from your backend
-        const res = await fetch("http://172.16.15.76:8080/token");
+        const res = await fetch("http://172.16.15.211:8080/token");
         if (!res.ok) throw new Error("Failed to get token");
         const data = await res.json();
 
-        await room.connect("ws://172.16.15.76:7880", data.token);
+        await room.connect("ws://172.16.15.211:7880", data.token);
 
         // Enable microphone
         await room.localParticipant.setMicrophoneEnabled(true);
