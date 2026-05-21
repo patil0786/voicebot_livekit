@@ -1,15 +1,13 @@
 version: "3.9"
-
 services:
-
   livekit:
     image: livekit/livekit-server:latest
     container_name: livekit
     restart: unless-stopped
     ports:
-      - "7880:7880"          # HTTP/WS
-      - "7881:7881/tcp"      # RTC TCP
-      - "50000-50100:50000-50100/udp"  # RTC UDP range
+      - "7880:7880"
+      - "7881:7881/tcp"
+      - "50000-50100:50000-50100/udp"
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml
     command: --config /etc/livekit.yaml
@@ -43,6 +41,8 @@ services:
       - .env
     environment:
       - LIVEKIT_URL=ws://livekit:7880
+    volumes:
+      - agent_models:/root/.cache
     depends_on:
       - livekit
     networks:
@@ -67,3 +67,7 @@ services:
 networks:
   voiceagent:
     driver: bridge
+
+volumes:
+  agent_models:
+    driver: local
