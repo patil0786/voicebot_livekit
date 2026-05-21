@@ -13,5 +13,6 @@ RUN pip install --no-cache-dir \
 
 COPY agents/ ./agents/
 COPY .env .
+RUN python -m livekit.agents download-files
 
 CMD ["python", "agents/voiceagent.py", "start"]
